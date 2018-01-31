@@ -21,7 +21,6 @@ module System.Logger
     , setFormat
     , delimiter
     , setDelimiter
-    , netstrings
     , setNetStrings
     , bufSize
     , setBufSize
@@ -109,7 +108,7 @@ new s = liftIO $ do
     !m <- fromMaybe "[]" <$> lookupEnv "LOG_LEVEL_MAP"
     let !k  = logLevelMap s `mergeWith` m
     let !s' = setLogLevel (fromMaybe (logLevel s) l)
-            . setNetStrings (fromMaybe (netstrings s) e)
+            . setNetStrings (fromMaybe False e)
             . setLogLevelMap k
             $ s
     g <- fn (output s) (fromMaybe (bufSize s) n)
@@ -182,10 +181,10 @@ level = logLevel . settings
 putMsg :: MonadIO m => Logger -> Level -> (Msg -> Msg) -> m ()
 putMsg g l f = liftIO $ do
     d <- getDate g
-    let n = netstrings $ settings g
-    let x = delimiter  $ settings g
-    let s = nameMsg    $ settings g
-    let m = render x n (d . lmsg l . s . f)
+    let r = renderer  $ settings g
+    let x = delimiter $ settings g
+    let s = nameMsg   $ settings g
+    let m = render x r (d . lmsg l . s . f)
     FL.pushLogStr (logger g) (FL.toLogStr m)
 
 lmsg :: Level -> (Msg -> Msg)

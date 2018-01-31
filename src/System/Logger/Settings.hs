@@ -19,7 +19,6 @@ module System.Logger.Settings
     , setBufSize
     , delimiter
     , setDelimiter
-    , netstrings
     , setNetStrings
     , logLevel
     , logLevelMap
@@ -30,6 +29,8 @@ module System.Logger.Settings
     , name
     , setName
     , nameMsg
+    , renderer
+    , setRenderer
     , iso8601UTC
     ) where
 
@@ -42,16 +43,18 @@ import Data.UnixTime
 import System.Log.FastLogger (defaultBufSize)
 import System.Logger.Message
 
+import qualified Data.ByteString.Builder as B
+
 data Settings = Settings
     { _logLevel   :: !Level              -- ^ messages below this log level will be suppressed
     , _levelMap   :: !(Map Text Level)   -- ^ log level per named logger
     , _output     :: !Output             -- ^ log sink
     , _format     :: !(Maybe DateFormat) -- ^ the timestamp format (use 'Nothing' to disable timestamps)
     , _delimiter  :: !ByteString         -- ^ text to intersperse between fields of a log line
-    , _netstrings :: !Bool               -- ^ use <http://cr.yp.to/proto/netstrings.txt netstrings> encoding (fixes delimiter to \",\")
     , _bufSize    :: !Int                -- ^ how many bytes to buffer before commiting to sink
     , _name       :: !(Maybe Text)       -- ^ logger name
     , _nameMsg    :: !(Msg -> Msg)
+    , _renderer   :: !(ByteString -> [Element] -> B.Builder)
     }
 
 output :: Settings -> Output
@@ -82,11 +85,9 @@ setDelimiter x s = s { _delimiter = x }
 
 -- | Whether to use <http://cr.yp.to/proto/netstrings.txt netstring>
 -- encoding for log lines.
-netstrings :: Settings -> Bool
-netstrings = _netstrings
-
 setNetStrings :: Bool -> Settings -> Settings
-setNetStrings x s = s { _netstrings = x }
+setNetStrings True  = setRenderer renderNetstr
+setNetStrings False = setRenderer renderDefault
 
 logLevel :: Settings -> Level
 logLevel = _logLevel
@@ -119,6 +120,13 @@ setName (Just xs) s = s { _name = Just xs, _nameMsg = "logger" .= xs }
 
 nameMsg :: Settings -> (Msg -> Msg)
 nameMsg = _nameMsg
+
+-- | Output format
+renderer :: Settings -> (ByteString -> [Element] -> B.Builder)
+renderer = _renderer
+
+setRenderer :: (ByteString -> [Element] -> B.Builder) -> Settings -> Settings
+setRenderer f s = s { _renderer = f }
 
 data Level
     = Trace
@@ -169,7 +177,7 @@ defSettings = Settings
     StdOut
     (Just iso8601UTC)
     ", "
-    False
     defaultBufSize
     Nothing
     id
+    renderDefault

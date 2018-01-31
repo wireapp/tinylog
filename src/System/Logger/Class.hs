@@ -16,7 +16,6 @@ module System.Logger.Class
     , L.setFormat
     , L.delimiter
     , L.setDelimiter
-    , L.netstrings
     , L.setNetStrings
     , L.bufSize
     , L.setBufSize
