@@ -29,7 +29,7 @@ module System.Logger.Message
     , (~~)
     , val
     , eval
-    , builderSiz
+    , builderSize
     , builderBytes
     , render
     , renderDefault
@@ -87,8 +87,8 @@ instance Monoid Builder where
 eval :: Builder -> L.ByteString
 eval (Builder n b) = B.toLazyByteStringWith (B.safeStrategy n 256) L.empty b
 
-builderSiz :: Builder -> Int
-builderSiz (Builder n _) = n
+builderSize :: Builder -> Int
+builderSize (Builder n _) = n
 
 builderBytes :: Builder -> B.Builder
 builderBytes (Builder _ b) = b
