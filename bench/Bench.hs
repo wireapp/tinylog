@@ -10,8 +10,7 @@ module Main (main) where
 import Criterion
 import Criterion.Main
 import Data.Int
-import Data.Monoid
-import System.Logger.Message
+import System.Logger
 
 import qualified Data.ByteString.Builder as B
 import qualified Data.ByteString.Lazy    as L
@@ -52,21 +51,21 @@ main = defaultMain
 
 f :: Renderer -> Int -> Int64
 f r n = L.length
-      . render ", " r
+      . render ", " iso8601UTC Trace r
       . foldr1 (.)
       . replicate n
       $ msg (val "hello world" +++ (10000 :: Int) +++ (-42 :: Int64))
 
 g :: Renderer -> Int -> Int64
 g r n = L.length
-      . render ", " r
+      . render ", " iso8601UTC Trace r
       . foldr1 (.)
       . replicate n
       $ "key" .= (val "hello world" +++ (10000 :: Int) +++ (-42 :: Int64))
 
 
 renderCustom :: Renderer
-renderCustom s = encAll mempty
+renderCustom s _ _ = encAll mempty
   where
     encAll !acc    []  = acc
     encAll !acc (b:[]) = acc <> encOne b

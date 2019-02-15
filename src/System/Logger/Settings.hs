@@ -9,6 +9,7 @@ module System.Logger.Settings
     , Level      (..)
     , Output     (..)
     , DateFormat (..)
+    , Renderer
 
     , defSettings
     , output
@@ -43,8 +44,6 @@ import Data.UnixTime
 import System.Log.FastLogger (defaultBufSize)
 import System.Logger.Message
 
-import qualified Data.ByteString.Builder as B
-
 data Settings = Settings
     { _logLevel   :: !Level              -- ^ messages below this log level will be suppressed
     , _levelMap   :: !(Map Text Level)   -- ^ log level per named logger
@@ -54,7 +53,7 @@ data Settings = Settings
     , _bufSize    :: !Int                -- ^ how many bytes to buffer before commiting to sink
     , _name       :: !(Maybe Text)       -- ^ logger name
     , _nameMsg    :: !(Msg -> Msg)
-    , _renderer   :: !(ByteString -> [Element] -> B.Builder)
+    , _renderer   :: !Renderer
     }
 
 output :: Settings -> Output
@@ -122,10 +121,10 @@ nameMsg :: Settings -> (Msg -> Msg)
 nameMsg = _nameMsg
 
 -- | Output format
-renderer :: Settings -> (ByteString -> [Element] -> B.Builder)
+renderer :: Settings -> Renderer
 renderer = _renderer
 
-setRenderer :: (ByteString -> [Element] -> B.Builder) -> Settings -> Settings
+setRenderer :: Renderer -> Settings -> Settings
 setRenderer f s = s { _renderer = f }
 
 data Level
@@ -153,6 +152,8 @@ instance IsString DateFormat where
 -- | ISO 8601 date-time format.
 iso8601UTC :: DateFormat
 iso8601UTC = "%Y-%0m-%0dT%0H:%0M:%0SZ"
+
+type Renderer = Renderer_ DateFormat Level
 
 -- | Default settings:
 --

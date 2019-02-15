@@ -21,7 +21,7 @@ module System.Logger.Message
     , Msg
     , Builder
     , Element (..)
-    , Renderer
+    , Renderer_
     , msg
     , field
     , (.=)
@@ -132,7 +132,8 @@ len10 !n = if n > 0 then go n 0 else 1 + go (-n) 0
 -- | Type representing log messages.
 newtype Msg = Msg { elements :: [Element] }
 
-type Renderer = ByteString -> [Element] -> B.Builder
+-- | See 'Renderer'.  'Renderer_' is just used here to avoid import cycles.
+type Renderer_ dateformat level = ByteString -> dateformat -> level -> [Element] -> B.Builder
 
 data Element
     = Bytes Builder
@@ -167,13 +168,15 @@ infixr 6 +++
 val :: ByteString -> Builder
 val = bytes
 
--- | Intersperse parts of the log message with the given delimiter and
--- render the whole builder into a 'L.ByteString'.
-render :: ByteString -> Renderer -> (Msg -> Msg) -> L.ByteString
-render s f m = finish . f s . elements . m $ empty
+-- | Construct elements, call a renderer, and run the whole builder
+-- into a 'L.ByteString'.
+render :: ByteString
+       -> dateformat -> level -> Renderer_ dateformat level
+       -> (Msg -> Msg) -> L.ByteString
+render s d l f m = finish . f s d l . elements . m $ empty
 
-renderDefault :: Renderer
-renderDefault s = encAll mempty
+renderDefault :: Renderer_ dateformat level
+renderDefault s _ _ = encAll mempty
   where
     encAll !acc    []  = acc
     encAll !acc (b:[]) = acc <> encOne b
@@ -185,8 +188,8 @@ renderDefault s = encAll mempty
     eq  = B.char8 '='
     sep = B.byteString s
 
-renderNetstr :: Renderer
-renderNetstr _ = encAll mempty
+renderNetstr :: Renderer_ dateformat level
+renderNetstr _ _ _ = encAll mempty
   where
     encAll !acc []     = acc
     encAll !acc (b:bb) = encAll (acc <> encOne b) bb

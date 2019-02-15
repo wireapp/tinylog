@@ -32,6 +32,7 @@ module System.Logger
     , Level      (..)
     , Output     (..)
     , DateFormat (..)
+    , Renderer
     , iso8601UTC
 
       -- * Core API
@@ -184,7 +185,9 @@ putMsg g l f = liftIO $ do
     let r = renderer  $ settings g
     let x = delimiter $ settings g
     let s = nameMsg   $ settings g
-    let m = render x r (d . lmsg l . s . f)
+    let df = fromMaybe iso8601UTC . format $ settings g
+    let ll = logLevel $ settings g
+    let m = render x df ll r (d . lmsg l . s . f)
     FL.pushLogStr (logger g) (FL.toLogStr m)
 
 lmsg :: Level -> (Msg -> Msg)
