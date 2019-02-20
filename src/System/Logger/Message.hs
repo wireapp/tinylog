@@ -21,7 +21,6 @@ module System.Logger.Message
     , Msg
     , Builder
     , Element (..)
-    , Renderer_
     , msg
     , field
     , (.=)
@@ -132,9 +131,6 @@ len10 !n = if n > 0 then go n 0 else 1 + go (-n) 0
 -- | Type representing log messages.
 newtype Msg = Msg { elements :: [Element] }
 
--- | See 'Renderer'.  'Renderer_' is just used here to avoid import cycles.
-type Renderer_ dateformat level = ByteString -> dateformat -> level -> [Element] -> B.Builder
-
 data Element
     = Bytes Builder
     | Field Builder Builder
@@ -170,13 +166,11 @@ val = bytes
 
 -- | Construct elements, call a renderer, and run the whole builder
 -- into a 'L.ByteString'.
-render :: ByteString
-       -> dateformat -> level -> Renderer_ dateformat level
-       -> (Msg -> Msg) -> L.ByteString
-render s d l f m = finish . f s d l . elements . m $ empty
+render :: ([Element] -> B.Builder) -> (Msg -> Msg) -> L.ByteString
+render f m = finish . f . elements . m $ empty
 
-renderDefault :: Renderer_ dateformat level
-renderDefault s _ _ = encAll mempty
+renderDefault :: ByteString -> [Element] -> B.Builder
+renderDefault s = encAll mempty
   where
     encAll !acc    []  = acc
     encAll !acc (b:[]) = acc <> encOne b
@@ -188,8 +182,8 @@ renderDefault s _ _ = encAll mempty
     eq  = B.char8 '='
     sep = B.byteString s
 
-renderNetstr :: Renderer_ dateformat level
-renderNetstr _ _ _ = encAll mempty
+renderNetstr :: [Element] -> B.Builder
+renderNetstr = encAll mempty
   where
     encAll !acc []     = acc
     encAll !acc (b:bb) = encAll (acc <> encOne b) bb

@@ -26,6 +26,8 @@ module System.Logger
     , setBufSize
     , name
     , setName
+    , setRenderer
+    , renderer
 
       -- * Type definitions
     , Logger
@@ -187,7 +189,7 @@ putMsg g l f = liftIO $ do
     let s = nameMsg   $ settings g
     let df = fromMaybe iso8601UTC . format $ settings g
     let ll = logLevel $ settings g
-    let m = render x df ll r (d . lmsg l . s . f)
+    let m = render (r x df ll) (d . lmsg l . s . f)
     FL.pushLogStr (logger g) (FL.toLogStr m)
 
 lmsg :: Level -> (Msg -> Msg)

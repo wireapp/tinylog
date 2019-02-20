@@ -18,14 +18,14 @@ import qualified Data.ByteString.Lazy    as L
 main :: IO ()
 main = defaultMain
     [ bgroup "direct"
-        [ bench "msg/8"  (whnf (f renderDefault) 8)
-        , bench "msg/16" (whnf (f renderDefault) 16)
-        , bench "msg/32" (whnf (f renderDefault) 32)
+        [ bench "msg/8"  (whnf (f $ \s _ _ -> renderDefault s) 8)
+        , bench "msg/16" (whnf (f $ \s _ _ -> renderDefault s) 16)
+        , bench "msg/32" (whnf (f $ \s _ _ -> renderDefault s) 32)
         ]
     , bgroup "netstr"
-        [ bench "msg/8"  (whnf (f renderNetstr) 8)
-        , bench "msg/16" (whnf (f renderNetstr) 16)
-        , bench "msg/32" (whnf (f renderNetstr) 32)
+        [ bench "msg/8"  (whnf (f $ \_ _ _ -> renderNetstr) 8)
+        , bench "msg/16" (whnf (f $ \_ _ _ -> renderNetstr) 16)
+        , bench "msg/32" (whnf (f $ \_ _ _ -> renderNetstr) 32)
         ]
     , bgroup "custom"
         [ bench "msg/8"  (whnf (f renderCustom) 8)
@@ -33,14 +33,14 @@ main = defaultMain
         , bench "msg/32" (whnf (f renderCustom) 32)
         ]
     , bgroup "direct"
-        [ bench "field/8"  (whnf (g renderDefault) 8)
-        , bench "field/16" (whnf (g renderDefault) 16)
-        , bench "field/32" (whnf (g renderDefault) 32)
+        [ bench "field/8"  (whnf (g $ \s _ _ -> renderDefault s) 8)
+        , bench "field/16" (whnf (g $ \s _ _ -> renderDefault s) 16)
+        , bench "field/32" (whnf (g $ \s _ _ -> renderDefault s) 32)
         ]
     , bgroup "netstr"
-        [ bench "field/8"  (whnf (g renderNetstr) 8)
-        , bench "field/16" (whnf (g renderNetstr) 16)
-        , bench "field/32" (whnf (g renderNetstr) 32)
+        [ bench "field/8"  (whnf (g $ \_ _ _ -> renderNetstr) 8)
+        , bench "field/16" (whnf (g $ \_ _ _ -> renderNetstr) 16)
+        , bench "field/32" (whnf (g $ \_ _ _ -> renderNetstr) 32)
         ]
     , bgroup "custom"
         [ bench "field/8"  (whnf (g renderCustom) 8)
@@ -51,14 +51,14 @@ main = defaultMain
 
 f :: Renderer -> Int -> Int64
 f r n = L.length
-      . render ", " iso8601UTC Trace r
+      . render (r ", " iso8601UTC Trace)
       . foldr1 (.)
       . replicate n
       $ msg (val "hello world" +++ (10000 :: Int) +++ (-42 :: Int64))
 
 g :: Renderer -> Int -> Int64
 g r n = L.length
-      . render ", " iso8601UTC Trace r
+      . render (r ", " iso8601UTC Trace)
       . foldr1 (.)
       . replicate n
       $ "key" .= (val "hello world" +++ (10000 :: Int) +++ (-42 :: Int64))

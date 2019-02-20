@@ -44,6 +44,8 @@ import Data.UnixTime
 import System.Log.FastLogger (defaultBufSize)
 import System.Logger.Message
 
+import qualified Data.ByteString.Lazy.Builder as B
+
 data Settings = Settings
     { _logLevel   :: !Level              -- ^ messages below this log level will be suppressed
     , _levelMap   :: !(Map Text Level)   -- ^ log level per named logger
@@ -85,8 +87,8 @@ setDelimiter x s = s { _delimiter = x }
 -- | Whether to use <http://cr.yp.to/proto/netstrings.txt netstring>
 -- encoding for log lines.
 setNetStrings :: Bool -> Settings -> Settings
-setNetStrings True  = setRenderer renderNetstr
-setNetStrings False = setRenderer renderDefault
+setNetStrings True  = setRenderer $ \_ _ _ -> renderNetstr
+setNetStrings False = setRenderer $ \s _ _ -> renderDefault s
 
 logLevel :: Settings -> Level
 logLevel = _logLevel
@@ -153,7 +155,7 @@ instance IsString DateFormat where
 iso8601UTC :: DateFormat
 iso8601UTC = "%Y-%0m-%0dT%0H:%0M:%0SZ"
 
-type Renderer = Renderer_ DateFormat Level
+type Renderer = ByteString -> DateFormat -> Level -> [Element] -> B.Builder
 
 -- | Default settings:
 --
@@ -181,4 +183,4 @@ defSettings = Settings
     defaultBufSize
     Nothing
     id
-    renderDefault
+    (\s _ _ -> renderDefault s)

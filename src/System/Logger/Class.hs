@@ -21,6 +21,8 @@ module System.Logger.Class
     , L.setBufSize
     , L.name
     , L.setName
+    , L.setRenderer
+    , L.renderer
 
     , L.Level    (..)
     , L.Output   (..)
