@@ -22,6 +22,8 @@ module System.Logger
     , delimiter
     , setDelimiter
     , setNetStrings
+    , setRendererNetstr
+    , setRendererDefault
     , bufSize
     , setBufSize
     , name

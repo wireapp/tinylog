@@ -21,6 +21,8 @@ module System.Logger.Settings
     , delimiter
     , setDelimiter
     , setNetStrings
+    , setRendererNetstr
+    , setRendererDefault
     , logLevel
     , logLevelMap
     , logLevelOf
@@ -85,10 +87,20 @@ setDelimiter :: ByteString -> Settings -> Settings
 setDelimiter x s = s { _delimiter = x }
 
 -- | Whether to use <http://cr.yp.to/proto/netstrings.txt netstring>
--- encoding for log lines.
+-- encoding for log lines.  Loads 'renderDefault' if given 'False'.
+--
+-- {#- DEPRECATED setNetStrings "Use setRendererNetstr or setRendererDefault instead" #-}
 setNetStrings :: Bool -> Settings -> Settings
 setNetStrings True  = setRenderer $ \_ _ _ -> renderNetstr
 setNetStrings False = setRenderer $ \s _ _ -> renderDefault s
+
+-- | Use <http://cr.yp.to/proto/netstrings.txt netstring> encoding
+-- for log lines.
+setRendererNetstr :: Settings -> Settings
+setRendererNetstr = setRenderer $ \_ _ _ -> renderNetstr
+
+setRendererDefault :: Settings -> Settings
+setRendererDefault = setRenderer $ \s _ _ -> renderDefault s
 
 logLevel :: Settings -> Level
 logLevel = _logLevel
