@@ -22,8 +22,10 @@ module System.Logger
     , delimiter
     , setDelimiter
     , setNetStrings
-    , setRendererNetstr
     , setRendererDefault
+    , setRendererNetstr
+    , renderDefault
+    , renderNetstr
     , bufSize
     , setBufSize
     , name
@@ -67,7 +69,7 @@ import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.UnixTime
 import System.Environment (lookupEnv)
-import System.Logger.Message as M
+import System.Logger.Message as M hiding (renderDefault_, renderNetstr_)
 import System.Logger.Settings
 import Prelude hiding (log)
 
