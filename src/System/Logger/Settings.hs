@@ -94,11 +94,11 @@ setNetStrings :: Bool -> Settings -> Settings
 setNetStrings True  = setRenderer $ \_ _ _ -> renderNetstr
 setNetStrings False = setRenderer $ \s _ _ -> renderDefault s
 
--- | Use <http://cr.yp.to/proto/netstrings.txt netstring> encoding
--- for log lines.
+-- | Shortcut for calling 'setRenderer' with 'renderNetstr'.
 setRendererNetstr :: Settings -> Settings
 setRendererNetstr = setRenderer $ \_ _ _ -> renderNetstr
 
+-- | Shortcut for calling 'setRenderer' with 'renderDefault'.
 setRendererDefault :: Settings -> Settings
 setRendererDefault = setRenderer $ \s _ _ -> renderDefault s
 
@@ -138,6 +138,9 @@ nameMsg = _nameMsg
 renderer :: Settings -> Renderer
 renderer = _renderer
 
+-- | Set a custom renderer.  See 'setRendererDefault', 'setRendererNetstr' for
+-- two common special cases.  Look at the code of 'renderDefault',
+-- 'renderNetstr' for examples how to write custom renderers.
 setRenderer :: Renderer -> Settings -> Settings
 setRenderer f s = s { _renderer = f }
 
@@ -167,6 +170,10 @@ instance IsString DateFormat where
 iso8601UTC :: DateFormat
 iso8601UTC = "%Y-%0m-%0dT%0H:%0M:%0SZ"
 
+-- | Take a custom separator, date format, log level of the event, and render
+-- a list of log fields or messages into a builder.
+--
+-- See also: 'renderDefault', 'renderNetstr'.
 type Renderer = ByteString -> DateFormat -> Level -> [Element] -> B.Builder
 
 -- | Default settings:

@@ -169,6 +169,8 @@ val = bytes
 render :: ([Element] -> B.Builder) -> (Msg -> Msg) -> L.ByteString
 render f m = finish . f . elements . m $ empty
 
+-- | Simple 'Renderer' with '=' between field names and values and a custom
+-- separator.
 renderDefault :: ByteString -> [Element] -> B.Builder
 renderDefault s = encAll mempty
   where
@@ -182,6 +184,8 @@ renderDefault s = encAll mempty
     eq  = B.char8 '='
     sep = B.byteString s
 
+-- | 'Renderer' that uses <http://cr.yp.to/proto/netstrings.txt netstring>
+-- encoding for log lines.
 renderNetstr :: [Element] -> B.Builder
 renderNetstr = encAll mempty
   where
