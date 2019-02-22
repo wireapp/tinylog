@@ -26,7 +26,6 @@ module System.Logger
     , setRendererNetstr
     , renderDefault
     , renderNetstr
-    , canonicalizeWhitespace
     , bufSize
     , setBufSize
     , name
