@@ -25,6 +25,7 @@ module System.Logger.Settings
     , setRendererNetstr
     , renderDefault
     , renderNetstr
+    , canonicalizeWhitespace
     , logLevel
     , logLevelMap
     , logLevelOf
@@ -40,6 +41,7 @@ module System.Logger.Settings
     ) where
 
 import Data.String
+import Data.Char (isSpace)
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 (pack)
 import Data.Map.Strict as Map
@@ -48,6 +50,7 @@ import Data.UnixTime
 import System.Log.FastLogger (defaultBufSize)
 import System.Logger.Message
 
+import qualified Data.ByteString.Lazy.Char8 as L
 import qualified Data.ByteString.Lazy.Builder as B
 
 data Settings = Settings
@@ -113,6 +116,23 @@ renderDefault s _ _ = renderDefault_ s
 -- encoding for log lines.
 renderNetstr :: Renderer
 renderNetstr _ _ _ = renderNetstr_
+
+-- | Replace all whitespace characters in the output of a renderer by @' '@.
+-- Log output must be ASCII encoding.
+--
+-- (Many logging processors handle newlines poorly.  Instead of hunting down all
+-- places and situations in your code and your dependencies that inject newlines
+-- into your log messages, you can choose to call 'canonicalizeWhitespace' on
+-- your renderer.)
+canonicalizeWhitespace :: Renderer -> Renderer
+canonicalizeWhitespace rndrRaw delim df lvl
+  = B.lazyByteString . nl2sp . B.toLazyByteString . rndrRaw delim df lvl
+  where
+    nl2sp :: L.ByteString -> L.ByteString
+    nl2sp = L.concatMap $
+      \c -> if isSpace c
+            then " "
+            else L.singleton c
 
 logLevel :: Settings -> Level
 logLevel = _logLevel
