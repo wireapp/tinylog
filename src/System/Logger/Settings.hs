@@ -9,6 +9,7 @@ module System.Logger.Settings
     , Level      (..)
     , Output     (..)
     , DateFormat (..)
+    , Renderer
 
     , defSettings
     , output
@@ -19,8 +20,11 @@ module System.Logger.Settings
     , setBufSize
     , delimiter
     , setDelimiter
-    , netstrings
     , setNetStrings
+    , setRendererDefault
+    , setRendererNetstr
+    , renderDefault
+    , renderNetstr
     , logLevel
     , logLevelMap
     , logLevelOf
@@ -30,6 +34,8 @@ module System.Logger.Settings
     , name
     , setName
     , nameMsg
+    , renderer
+    , setRenderer
     , iso8601UTC
     ) where
 
@@ -42,16 +48,18 @@ import Data.UnixTime
 import System.Log.FastLogger (defaultBufSize)
 import System.Logger.Message
 
+import qualified Data.ByteString.Lazy.Builder as B
+
 data Settings = Settings
     { _logLevel   :: !Level              -- ^ messages below this log level will be suppressed
     , _levelMap   :: !(Map Text Level)   -- ^ log level per named logger
     , _output     :: !Output             -- ^ log sink
     , _format     :: !(Maybe DateFormat) -- ^ the timestamp format (use 'Nothing' to disable timestamps)
     , _delimiter  :: !ByteString         -- ^ text to intersperse between fields of a log line
-    , _netstrings :: !Bool               -- ^ use <http://cr.yp.to/proto/netstrings.txt netstrings> encoding (fixes delimiter to \",\")
     , _bufSize    :: !Int                -- ^ how many bytes to buffer before commiting to sink
     , _name       :: !(Maybe Text)       -- ^ logger name
     , _nameMsg    :: !(Msg -> Msg)
+    , _renderer   :: !Renderer
     }
 
 output :: Settings -> Output
@@ -81,12 +89,30 @@ setDelimiter :: ByteString -> Settings -> Settings
 setDelimiter x s = s { _delimiter = x }
 
 -- | Whether to use <http://cr.yp.to/proto/netstrings.txt netstring>
--- encoding for log lines.
-netstrings :: Settings -> Bool
-netstrings = _netstrings
-
+-- encoding for log lines.  Loads 'renderDefault' if given 'False'.
+--
+-- {#- DEPRECATED setNetStrings "Use setRendererNetstr or setRendererDefault instead" #-}
 setNetStrings :: Bool -> Settings -> Settings
-setNetStrings x s = s { _netstrings = x }
+setNetStrings True  = setRendererNetstr
+setNetStrings False = setRendererDefault
+
+-- | Shortcut for calling 'setRenderer' with 'renderDefault'.
+setRendererDefault :: Settings -> Settings
+setRendererDefault = setRenderer renderDefault
+
+-- | Shortcut for calling 'setRenderer' with 'renderNetstr'.
+setRendererNetstr :: Settings -> Settings
+setRendererNetstr = setRenderer renderNetstr
+
+-- | Simple 'Renderer' with '=' between field names and values and a custom
+-- separator.
+renderDefault :: Renderer
+renderDefault s _ _ = renderDefault_ s
+
+-- | 'Renderer' that uses <http://cr.yp.to/proto/netstrings.txt netstring>
+-- encoding for log lines.
+renderNetstr :: Renderer
+renderNetstr _ _ _ = renderNetstr_
 
 logLevel :: Settings -> Level
 logLevel = _logLevel
@@ -120,6 +146,16 @@ setName (Just xs) s = s { _name = Just xs, _nameMsg = "logger" .= xs }
 nameMsg :: Settings -> (Msg -> Msg)
 nameMsg = _nameMsg
 
+-- | Output format
+renderer :: Settings -> Renderer
+renderer = _renderer
+
+-- | Set a custom renderer.  See 'setRendererDefault', 'setRendererNetstr' for
+-- two common special cases.  Look at the code of 'renderDefault',
+-- 'renderNetstr' for examples how to write custom renderers.
+setRenderer :: Renderer -> Settings -> Settings
+setRenderer f s = s { _renderer = f }
+
 data Level
     = Trace
     | Debug
@@ -146,6 +182,12 @@ instance IsString DateFormat where
 iso8601UTC :: DateFormat
 iso8601UTC = "%Y-%0m-%0dT%0H:%0M:%0SZ"
 
+-- | Take a custom separator, date format, log level of the event, and render
+-- a list of log fields or messages into a builder.
+--
+-- See also: 'renderDefault', 'renderNetstr'.
+type Renderer = ByteString -> DateFormat -> Level -> [Element] -> B.Builder
+
 -- | Default settings:
 --
 --   * 'logLevel'   = 'Debug'
@@ -169,7 +211,7 @@ defSettings = Settings
     StdOut
     (Just iso8601UTC)
     ", "
-    False
     defaultBufSize
     Nothing
     id
+    renderDefault

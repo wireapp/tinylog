@@ -21,18 +21,24 @@ module System.Logger
     , setFormat
     , delimiter
     , setDelimiter
-    , netstrings
     , setNetStrings
+    , setRendererDefault
+    , setRendererNetstr
+    , renderDefault
+    , renderNetstr
     , bufSize
     , setBufSize
     , name
     , setName
+    , setRenderer
+    , renderer
 
       -- * Type definitions
     , Logger
     , Level      (..)
     , Output     (..)
     , DateFormat (..)
+    , Renderer
     , iso8601UTC
 
       -- * Core API
@@ -63,7 +69,7 @@ import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.UnixTime
 import System.Environment (lookupEnv)
-import System.Logger.Message as M
+import System.Logger.Message as M hiding (renderDefault_, renderNetstr_)
 import System.Logger.Settings
 import Prelude hiding (log)
 
@@ -109,7 +115,7 @@ new s = liftIO $ do
     !m <- fromMaybe "[]" <$> lookupEnv "LOG_LEVEL_MAP"
     let !k  = logLevelMap s `mergeWith` m
     let !s' = setLogLevel (fromMaybe (logLevel s) l)
-            . setNetStrings (fromMaybe (netstrings s) e)
+            . setNetStrings (fromMaybe False e)
             . setLogLevelMap k
             $ s
     g <- fn (output s) (fromMaybe (bufSize s) n)
@@ -182,10 +188,12 @@ level = logLevel . settings
 putMsg :: MonadIO m => Logger -> Level -> (Msg -> Msg) -> m ()
 putMsg g l f = liftIO $ do
     d <- getDate g
-    let n = netstrings $ settings g
-    let x = delimiter  $ settings g
-    let s = nameMsg    $ settings g
-    let m = render x n (d . lmsg l . s . f)
+    let r = renderer  $ settings g
+    let x = delimiter $ settings g
+    let s = nameMsg   $ settings g
+    let df = fromMaybe iso8601UTC . format $ settings g
+    let ll = logLevel $ settings g
+    let m = render (r x df ll) (d . lmsg l . s . f)
     FL.pushLogStr (logger g) (FL.toLogStr m)
 
 lmsg :: Level -> (Msg -> Msg)
