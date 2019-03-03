@@ -31,8 +31,8 @@ module System.Logger.Message
     , builderSize
     , builderBytes
     , render
-    , renderDefault_
-    , renderNetstr_
+    , renderDefault
+    , renderNetstr
     ) where
 
 #if MIN_VERSION_base(4,9,0)
@@ -169,9 +169,10 @@ val = bytes
 render :: ([Element] -> B.Builder) -> (Msg -> Msg) -> L.ByteString
 render f m = finish . f . elements . m $ empty
 
--- | See 'renderDefault'.
-renderDefault_ :: ByteString -> [Element] -> B.Builder
-renderDefault_ s = encAll mempty
+-- | Simple 'Renderer' with '=' between field names and values and a custom
+-- separator.
+renderDefault :: ByteString -> [Element] -> B.Builder
+renderDefault s = encAll mempty
   where
     encAll !acc    []  = acc
     encAll !acc (b:[]) = acc <> encOne b
@@ -183,9 +184,10 @@ renderDefault_ s = encAll mempty
     eq  = B.char8 '='
     sep = B.byteString s
 
--- | See 'renderNetstr'.
-renderNetstr_ :: [Element] -> B.Builder
-renderNetstr_ = encAll mempty
+-- | 'Renderer' that uses <http://cr.yp.to/proto/netstrings.txt netstring>
+-- encoding for log lines.
+renderNetstr :: [Element] -> B.Builder
+renderNetstr = encAll mempty
   where
     encAll !acc []     = acc
     encAll !acc (b:bb) = encAll (acc <> encOne b) bb

@@ -21,10 +21,8 @@ module System.Logger.Settings
     , delimiter
     , setDelimiter
     , setNetStrings
-    , setRendererDefault
     , setRendererNetstr
-    , renderDefault
-    , renderNetstr
+    , setRendererDefault
     , logLevel
     , logLevelMap
     , logLevelOf
@@ -93,26 +91,16 @@ setDelimiter x s = s { _delimiter = x }
 --
 -- {#- DEPRECATED setNetStrings "Use setRendererNetstr or setRendererDefault instead" #-}
 setNetStrings :: Bool -> Settings -> Settings
-setNetStrings True  = setRendererNetstr
-setNetStrings False = setRendererDefault
-
--- | Shortcut for calling 'setRenderer' with 'renderDefault'.
-setRendererDefault :: Settings -> Settings
-setRendererDefault = setRenderer renderDefault
+setNetStrings True  = setRenderer $ \_ _ _ -> renderNetstr
+setNetStrings False = setRenderer $ \s _ _ -> renderDefault s
 
 -- | Shortcut for calling 'setRenderer' with 'renderNetstr'.
 setRendererNetstr :: Settings -> Settings
-setRendererNetstr = setRenderer renderNetstr
+setRendererNetstr = setRenderer $ \_ _ _ -> renderNetstr
 
--- | Simple 'Renderer' with '=' between field names and values and a custom
--- separator.
-renderDefault :: Renderer
-renderDefault s _ _ = renderDefault_ s
-
--- | 'Renderer' that uses <http://cr.yp.to/proto/netstrings.txt netstring>
--- encoding for log lines.
-renderNetstr :: Renderer
-renderNetstr _ _ _ = renderNetstr_
+-- | Shortcut for calling 'setRenderer' with 'renderDefault'.
+setRendererDefault :: Settings -> Settings
+setRendererDefault = setRenderer $ \s _ _ -> renderDefault s
 
 logLevel :: Settings -> Level
 logLevel = _logLevel
@@ -214,4 +202,4 @@ defSettings = Settings
     defaultBufSize
     Nothing
     id
-    renderDefault
+    (\s _ _ -> renderDefault s)
