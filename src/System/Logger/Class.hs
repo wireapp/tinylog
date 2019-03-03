@@ -7,6 +7,7 @@
 -- | The 'MonadLogger' type-class and associated functions.
 module System.Logger.Class
     ( L.Settings
+    , L.Renderer
     , L.defSettings
     , L.logLevel
     , L.setLogLevel

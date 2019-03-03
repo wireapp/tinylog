@@ -87,7 +87,7 @@ setDelimiter :: ByteString -> Settings -> Settings
 setDelimiter x s = s { _delimiter = x }
 
 -- | Whether to use <http://cr.yp.to/proto/netstrings.txt netstring>
--- encoding for log lines.  Loads 'renderDefault' if given 'False'.
+-- encoding for log lines.
 --
 -- {#- DEPRECATED setNetStrings "Use setRendererNetstr or setRendererDefault instead" #-}
 setNetStrings :: Bool -> Settings -> Settings
@@ -98,7 +98,10 @@ setNetStrings False = setRenderer $ \s _ _ -> renderDefault s
 setRendererNetstr :: Settings -> Settings
 setRendererNetstr = setRenderer $ \_ _ _ -> renderNetstr
 
--- | Shortcut for calling 'setRenderer' with 'renderDefault'.
+-- | Default rendering of log lines.
+--
+-- Uses the value of `delimiter` as a separator of fields and '=' between
+-- field names and values.
 setRendererDefault :: Settings -> Settings
 setRendererDefault = setRenderer $ \s _ _ -> renderDefault s
 
@@ -138,9 +141,9 @@ nameMsg = _nameMsg
 renderer :: Settings -> Renderer
 renderer = _renderer
 
--- | Set a custom renderer.  See 'setRendererDefault', 'setRendererNetstr' for
--- two common special cases.  Look at the code of 'renderDefault',
--- 'renderNetstr' for examples how to write custom renderers.
+-- | Set a custom renderer.
+--
+-- See 'setRendererDefault' and 'setRendererNetstr' for two common special cases.
 setRenderer :: Renderer -> Settings -> Settings
 setRenderer f s = s { _renderer = f }
 
@@ -172,8 +175,6 @@ iso8601UTC = "%Y-%0m-%0dT%0H:%0M:%0SZ"
 
 -- | Take a custom separator, date format, log level of the event, and render
 -- a list of log fields or messages into a builder.
---
--- See also: 'renderDefault', 'renderNetstr'.
 type Renderer = ByteString -> DateFormat -> Level -> [Element] -> B.Builder
 
 -- | Default settings:
