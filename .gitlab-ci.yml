@@ -29,11 +29,3 @@ test:8.0:
   script:
     - stack --no-terminal --resolver lts-9 --install-ghc test
 
-test:7.10:
-  script:
-    - stack --no-terminal --resolver lts-6 --install-ghc test
-
-test:7.8:
-  script:
-    - stack --no-terminal --resolver lts-2 --install-ghc test
-
