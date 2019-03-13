@@ -63,6 +63,7 @@ module System.Logger
 import Control.Applicative
 import Control.Monad
 import Control.Monad.IO.Class
+import Data.Bool (bool)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.UnixTime
@@ -113,7 +114,7 @@ new s = liftIO $ do
     !m <- fromMaybe "[]" <$> lookupEnv "LOG_LEVEL_MAP"
     let !k  = logLevelMap s `mergeWith` m
     let !s' = setLogLevel (fromMaybe (logLevel s) l)
-            . setNetStrings (fromMaybe False e)
+            . maybe id (bool id setRendererNetstr) e
             . setLogLevelMap k
             $ s
     g <- fn (output s) (fromMaybe (bufSize s) n)
