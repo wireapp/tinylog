@@ -34,6 +34,8 @@ module System.Logger.Settings
     , nameMsg
     , renderer
     , setRenderer
+    , readEnvironment
+    , setReadEnvironment
     , iso8601UTC
     ) where
 
@@ -49,15 +51,16 @@ import System.Logger.Message
 import qualified Data.ByteString.Lazy.Builder as B
 
 data Settings = Settings
-    { _logLevel   :: !Level              -- ^ messages below this log level will be suppressed
-    , _levelMap   :: !(Map Text Level)   -- ^ log level per named logger
-    , _output     :: !Output             -- ^ log sink
-    , _format     :: !(Maybe DateFormat) -- ^ the timestamp format (use 'Nothing' to disable timestamps)
-    , _delimiter  :: !ByteString         -- ^ text to intersperse between fields of a log line
-    , _bufSize    :: !Int                -- ^ how many bytes to buffer before commiting to sink
-    , _name       :: !(Maybe Text)       -- ^ logger name
-    , _nameMsg    :: !(Msg -> Msg)
-    , _renderer   :: !Renderer
+    { _logLevel        :: !Level              -- ^ messages below this log level will be suppressed
+    , _levelMap        :: !(Map Text Level)   -- ^ log level per named logger
+    , _output          :: !Output             -- ^ log sink
+    , _format          :: !(Maybe DateFormat) -- ^ the timestamp format (use 'Nothing' to disable timestamps)
+    , _delimiter       :: !ByteString         -- ^ text to intersperse between fields of a log line
+    , _bufSize         :: !Int                -- ^ how many bytes to buffer before commiting to sink
+    , _name            :: !(Maybe Text)       -- ^ logger name
+    , _nameMsg         :: !(Msg -> Msg)
+    , _renderer        :: !Renderer
+    , _readEnvironment :: !Bool               -- ^ should 'new' check @LOG_*@ process environment settings?
     }
 
 output :: Settings -> Output
@@ -147,6 +150,12 @@ renderer = _renderer
 setRenderer :: Renderer -> Settings -> Settings
 setRenderer f s = s { _renderer = f }
 
+readEnvironment :: Settings -> Bool
+readEnvironment = _readEnvironment
+
+setReadEnvironment :: Bool -> Settings -> Settings
+setReadEnvironment f s = s { _readEnvironment = f }
+
 data Level
     = Trace
     | Debug
@@ -179,19 +188,21 @@ type Renderer = ByteString -> DateFormat -> Level -> [Element] -> B.Builder
 
 -- | Default settings:
 --
---   * 'logLevel'   = 'Debug'
+--   * 'logLevel'        = 'Debug'
 --
---   * 'output'     = 'StdOut'
+--   * 'output'          = 'StdOut'
 --
---   * 'format'     = 'iso8601UTC'
+--   * 'format'          = 'iso8601UTC'
 --
---   * 'delimiter'  = \", \"
+--   * 'delimiter'       = \", \"
 --
---   * 'netstrings' = False
+--   * 'netstrings'      = False
 --
---   * 'bufSize'    = 'FL.defaultBufSize'
+--   * 'bufSize'         = 'FL.defaultBufSize'
 --
---   * 'name'       = Nothing
+--   * 'name'            = Nothing
+--
+--   * 'readEnvironment' = True
 --
 defSettings :: Settings
 defSettings = Settings
@@ -204,3 +215,4 @@ defSettings = Settings
     Nothing
     id
     (\s _ _ -> renderDefault s)
+    True
