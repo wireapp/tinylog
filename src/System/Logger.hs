@@ -85,11 +85,15 @@ data Logger = Logger
 -- Please note that the 'logLevel' can be dynamically adjusted by setting
 -- the environment variable @LOG_LEVEL@ accordingly. Likewise the buffer
 -- size can be dynamically set via @LOG_BUFFER@ and netstrings encoding
--- can be enabled with @LOG_NETSTR=True@
+-- can be enabled with @LOG_NETSTR=True@.  **NOTE: If you do this any custom
+-- renderers you may have passed with the settings will be overwritten!**
 --
 -- Since version 0.11 one can also use @LOG_LEVEL_MAP@ to specify log
 -- levels per (named) logger. The syntax uses standard haskell syntax for
 -- association lists of type @[(Text, Level)]@. For example:
+--
+-- If you want to ignore environment variables, call @setReadEnvironment False@ on the
+-- 'Settings'.
 --
 -- @
 -- $ LOG_LEVEL=Info LOG_LEVEL_MAP='[("foo", Warn), ("bar", Trace)]' cabal repl
@@ -108,10 +112,10 @@ data Logger = Logger
 -- @
 new :: MonadIO m => Settings -> m Logger
 new s = liftIO $ do
-    !n <- fmap (readNote "Invalid LOG_BUFFER") <$> lookupEnv "LOG_BUFFER"
-    !l <- fmap (readNote "Invalid LOG_LEVEL")  <$> lookupEnv "LOG_LEVEL"
-    !e <- fmap (readNote "Invalid LOG_NETSTR") <$> lookupEnv "LOG_NETSTR"
-    !m <- fromMaybe "[]" <$> lookupEnv "LOG_LEVEL_MAP"
+    !n <- fmap (readNote "Invalid LOG_BUFFER") <$> maybeLookupEnv "LOG_BUFFER"
+    !l <- fmap (readNote "Invalid LOG_LEVEL")  <$> maybeLookupEnv "LOG_LEVEL"
+    !e <- fmap (readNote "Invalid LOG_NETSTR") <$> maybeLookupEnv "LOG_NETSTR"
+    !m <- fromMaybe "[]" <$> maybeLookupEnv "LOG_LEVEL_MAP"
     let !k  = logLevelMap s `mergeWith` m
     let !s' = setLogLevel (fromMaybe (logLevel s) l)
             . maybe id (bool id setRendererNetstr) e
@@ -120,6 +124,12 @@ new s = liftIO $ do
     g <- fn (output s) (fromMaybe (bufSize s) n)
     Logger g s' <$> mkGetDate (format s)
   where
+    maybeLookupEnv :: String -> IO (Maybe String)
+    maybeLookupEnv key =
+        if readEnvironment s
+            then lookupEnv key
+            else pure Nothing
+
     fn StdOut   = FL.newStdoutLoggerSet
     fn StdErr   = FL.newStderrLoggerSet
     fn (Path p) = flip FL.newFileLoggerSet p
@@ -141,7 +151,7 @@ readNote m s = case reads s of
 -- | Logs a message with the given level if greater or equal to the
 -- logger's threshold.
 log :: MonadIO m => Logger -> Level -> (Msg -> Msg) -> m ()
-log g l m = unless (level g > l) . liftIO $ putMsg g l m
+log g l m = unless (level g > l) $ putMsg g l m
 {-# INLINE log #-}
 
 -- | Abbreviation of 'log' using the corresponding log level.
