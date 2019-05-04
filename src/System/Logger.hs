@@ -20,8 +20,10 @@ module System.Logger
     , format
     , setFormat
     , delimiter
+    , readEnvironment
     , setDelimiter
     , setNetStrings
+    , setReadEnvironment
     , setRendererNetstr
     , setRendererDefault
     , bufSize
