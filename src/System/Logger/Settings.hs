@@ -48,7 +48,7 @@ import Data.UnixTime
 import System.Log.FastLogger (defaultBufSize)
 import System.Logger.Message
 
-import qualified Data.ByteString.Lazy.Builder as B
+import qualified Data.ByteString.Builder as B
 
 data Settings = Settings
     { _logLevel        :: !Level              -- ^ messages below this log level will be suppressed
